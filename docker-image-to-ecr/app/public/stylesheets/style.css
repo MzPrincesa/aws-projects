@@ -1,0 +1,15 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+@media only screen and (max-width: 600px) {
+	#posts {
+		margin:  5px;
+		width: 20rem;
+	}
+} 
