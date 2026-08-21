@@ -12,7 +12,31 @@ You will need to setup docker. Go to the official website and install the setup.
 
 To check if the installation is successful, execute 'docker --version' in the terminal. It should prompt with the version and build installed in your system.
 
-Note: If you are using GH codespaces, it is already installed. Just run the version command.
+Note: If you are using GH codespaces (as i did), it is already installed. Just run the version command.
 
 Go to hub.docker.com/signup and create your account. To connect your system with your Docker account, execute docker login in the terminal.
 
+
+If you want to receate an updated version, Check your node & nvm versions. then edit your dockerfile & package.json accordingly.
+
+For newbies like me, here is what the depndencies do
+Dependency	Where/why	
+async	Controller async flow	
+bcryptjs	Password hashing	
+compression	Response compression	
+connect-flash	Flash messages	
+cookie-parser	Cookie parsing	
+debug	Server debugging	
+dotenv	Environment variables	
+express	Web framework	
+express-session	User sessions	
+express-validator	Input validation	
+hbs	Express view engine	
+helmet	Security headers	
+http-errors	HTTP errors	
+moment	Date/time handling	
+mongoose	MongoDB	
+morgan	HTTP request logging	
+passport	Authentication	
+passport-local	Local username/password strategy	
+dateformat	Date formatting
