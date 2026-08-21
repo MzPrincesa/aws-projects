@@ -4,5 +4,5 @@
   "remoteEnv": {
     "AWS_CLI_AUTO_PROMPT": "on-partial"
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y tree"
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y tree && nvm install 24.14.0 && nvm alias default 24.14.0"
 }
