@@ -85,17 +85,20 @@ Create your task definition json file
 ## Register task definition
 aws ecs register-task-definition --cli-input-json file://fargate-task.json
 
-## Create your sg
+## Create your sg & Allow temporary direct HTTP access
 aws ec2 create-security-group \
   --group-name xxxx \
   --description "xxxxx" \
   --vpc-id YOUR_VPC_ID \
   --region xxxx
 
+aws ec2 authorize-security-group-ingress \
+  --group-id YOUR_SECURITY_GROUP_ID \
+  --protocol tcp \
+  --port 3000 \
+  --cidr 0.0.0.0/0
 
 
-aws ec2 create-security-group \
-  --group-name inner-circle-fargate-sg \
-  --description "Security group for Inner Circle Fargate task" \
-  --vpc-id YOUR_VPC_ID \
-  --region us-east-1
+
+ "GroupId": "",
+    "SecurityGroupArn": "arn:aws:ec2:us-east-1:343218184480:security-group/sg-093601b8018d1fe45"
