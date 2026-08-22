@@ -63,10 +63,39 @@ docker push aws_account_id.dkr.ecr.region.amazonaws.com/my-repository:tag
 aws ecs create-cluster \
     --cluster-name MyCluster
 
-## Create the ECS Task Execution Role
+## Create the ECS Task Execution Role & Attach AWS managed policy
 Create a json file that contains the trust policy to use for the IAM role.
 
 Create an IAM role named ecsTaskExecutionRole using the trust policy created in the previous step.
 aws iam create-role \
       --role-name ecsTaskExecutionRole \
       --assume-role-policy-document file://ecs-tasks-trust-policy.json
+
+aws iam attach-role-policy \
+      --role-name ecsTaskExecutionRole \
+      --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+## Create the Fargate Task Definition
+Create cloudwatch log group
+aws logs create-log-group \
+  --log-group-name xxxx
+
+Create your task definition json file
+
+## Register task definition
+aws ecs register-task-definition --cli-input-json file://fargate-task.json
+
+## Create your sg
+aws ec2 create-security-group \
+  --group-name xxxx \
+  --description "xxxxx" \
+  --vpc-id YOUR_VPC_ID \
+  --region xxxx
+
+
+
+aws ec2 create-security-group \
+  --group-name inner-circle-fargate-sg \
+  --description "Security group for Inner Circle Fargate task" \
+  --vpc-id YOUR_VPC_ID \
+  --region us-east-1

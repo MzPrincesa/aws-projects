@@ -1,0 +1,31 @@
+{
+  "family": "inner-circle",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::343218184480:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "inner-circle",
+      "image": "343218184480.dkr.ecr.us-east-1.amazonaws.com/inner-circle:1.0",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/inner-circle",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}
