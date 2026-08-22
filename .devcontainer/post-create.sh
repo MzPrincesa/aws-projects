@@ -3,7 +3,7 @@ set -e
 
 echo ">>> Starting post-create setup"
 
-sudo apt-get update
+sudo apt-get update || true
 sudo apt-get install -y tree
 
 echo ">>> Loading NVM"
