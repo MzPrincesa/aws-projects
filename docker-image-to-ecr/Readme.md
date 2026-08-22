@@ -48,10 +48,25 @@ docker build -t <image name> .
 
 Proceed to run your container. 
 
-Create your ecr repo and auth docker to ecr 
+## Create your ecr repo and auth docker to ecr 
 aws ecr create-repository \
     --repository-name project-a/sample-repo
 
-    aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
+aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <aws_account_id>.dkr.ecr.<region>.amazonaws.com
 
-    
+## Tag & push your image to ecr
+
+docker tag <image name> aws_account_id.dkr.ecr.region.amazonaws.com/my-repository:tag
+docker push aws_account_id.dkr.ecr.region.amazonaws.com/my-repository:tag
+
+## Create ECS Cluster
+aws ecs create-cluster \
+    --cluster-name MyCluster
+
+## Create the ECS Task Execution Role
+Create a json file that contains the trust policy to use for the IAM role.
+
+Create an IAM role named ecsTaskExecutionRole using the trust policy created in the previous step.
+aws iam create-role \
+      --role-name ecsTaskExecutionRole \
+      --assume-role-policy-document file://ecs-tasks-trust-policy.json
