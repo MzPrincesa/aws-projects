@@ -47,6 +47,8 @@ Then proceed to build your image
 docker build -t <image name> .
 
 Proceed to run your container. 
+docker run <image-name>
+
 
 ## Create your ecr repo and auth docker to ecr 
 aws ecr create-repository \
@@ -286,3 +288,210 @@ aws ecs update-service \
 
 # Test ALB again
 curl http://YOUR_ALB_DNS_NAME/members
+
+# Move Fargate into the private subnets
+Start by creating your vpc endpoints.
+So our endpoint set will be:
+Service	Endpoint type	Purpose
+S3	Gateway	ECR image layer storage
+ECR API	Interface	ECR API
+ECR DKR	Interface	Docker image registry
+CloudWatch Logs	Interface	ECS container logs
+DynamoDB	Gateway	Application database
+I already have s3 gateway endpoint from another project so we'll skip that.
+
+# Create the endpoint security group & add inbound rule
+aws ec2 create-security-group \
+  --group-name inner-circle-vpc-endpoints-sg \
+  --description "Security group for Inner Circle VPC interface endpoints" \
+  --vpc-id YOUR_VPC_ID
+
+aws ec2 authorize-security-group-ingress \
+  --group-id ENDPOINT_SG_ID \
+  --protocol tcp \
+  --port 443 \
+  --source-group FARGATE_SG_ID
+
+# Create the ECR endpoints
+aws ec2 create-vpc-endpoint \
+  --vpc-id YOUR_VPC_ID \
+  --vpc-endpoint-type Interface \
+  --service-name com.amazonaws.us-east-1.ecr.api \
+  --subnet-ids \
+    PRIVATE_SUBNET_1a \
+    PRIVATE_SUBNET_1b \
+  --security-group-ids ENDPOINT_SG_ID \
+  --private-dns-enabled
+
+aws ec2 create-vpc-endpoint \
+  --vpc-id YOUR_VPC_ID \
+  --vpc-endpoint-type Interface \
+  --service-name com.amazonaws.us-east-1.ecr.dkr \
+  --subnet-ids \
+    PRIVATE_SUBNET_1a \
+    PRIVATE_SUBNET_1b \
+  --security-group-ids ENDPOINT_SG_ID \
+  --private-dns-enabled
+
+aws ec2 create-vpc-endpoint \
+  --vpc-id YOUR_VPC_ID \
+  --vpc-endpoint-type Interface \
+  --service-name com.amazonaws.us-east-1.logs \
+  --subnet-ids \
+    PRIVATE_SUBNET_1a \
+    PRIVATE_SUBNET_1b \
+  --security-group-ids ENDPOINT_SG_ID \
+  --private-dns-enabled
+
+# Create dynamodb endpoint
+aws ec2 create-vpc-endpoint \
+  --vpc-id YOUR_VPC_ID \
+  --vpc-endpoint-type Gateway \
+  --service-name com.amazonaws.us-east-1.dynamodb \
+  --route-table-ids \
+    rtb-private-1 \
+    rtb-private-2
+
+# Verify cfreation
+aws ec2 describe-vpc-endpoints \
+  --filters \
+    "Name=vpc-id,Values=YOUR_VPC_ID" \
+    "Name=service-name,Values=com.amazonaws.us-east-1.ecr.api,com.amazonaws.us-east-1.ecr.dkr,com.amazonaws.us-east-1.logs,com.amazonaws.us-east-1.dynamodb" \
+  --query 'VpcEndpoints[*].[VpcEndpointId,ServiceName,VpcEndpointType,State,PrivateDnsEnabled,SubnetIds]' \
+  --output json
+
+# Update ECS Service
+aws ecs update-service \
+  --cluster inner-circle-cluster \
+  --service inner-circle-service \
+  --network-configuration 'awsvpcConfiguration={subnets=[private-subnet-1a,private-subnet-1b],securityGroups=[FARGATE-SG-ID],assignPublicIp=DISABLED}'
+
+  You can query your network config to ensure "assignPublicIp": "DISABLED" using
+  aws ecs describe-services \
+  --cluster inner-circle-cluster \
+  --services inner-circle-service \
+  --query 'services[0].networkConfiguration.awsvpcConfiguration' \
+  --output json
+
+# Retest Your application
+curl http://YOUR_ALB_DNS_NAME/members
+curl http://YOUR_ALB_DNS_NAME/health
+
+# ECR image scanning
+Inspect repo config to ensure scanonpush=true
+aws ecr describe-repositories \
+  --repository-names inner-circle \
+  --query 'repositories[0].[repositoryName,repositoryUri,imageScanningConfiguration,scanOnPush,encryptionConfiguration]' \
+  --output table
+if none(like mine), run
+aws ecr put-image-scanning-configuration \
+  --repository-name inner-circle \
+  --image-scanning-configuration scanOnPush=true
+
+Proceed to scan as Enabling scan-on-push doesn't retroactively scan the image you already pushed.
+aws ecr start-image-scan \
+  --repository-name inner-circle \
+  --image-id imageTag=2.0
+
+After a bit, run:
+aws ecr describe-image-scan-findings \
+  --repository-name inner-circle \
+  --image-id imageTag=2.0 \
+  --query '{ScanStatus: imageScanStatus, SeverityCounts: imageScanFindings.findingSeverityCounts}' \
+  --output json 
+
+This was my result. Now we have to enable enhanced scanning which uses Amazon Inspector *tears*
+    "ScanStatus": {
+        "status": "FAILED",
+        "description": "Number of vulnerabilities for this image exceeds the maximum supported with Basic Scanning. Please upgrade to Enhanced Scanning to cover all vulnerabilities in the image."
+    }
+
+# Enable enhanced scanning
+aws ecr put-registry-scanning-configuration \
+  --scan-type ENHANCED \
+  --rules '[
+    {
+      "scanFrequency": "CONTINUOUS_SCAN",
+      "repositoryFilters": [
+        {
+          "filter": "inner-circle",
+          "filterType": "WILDCARD"
+        }
+      ]
+    }
+  ]'
+
+Give it some time and re-run 
+aws ecr describe-image-scan-findings \
+  --repository-name inner-circle \
+  --image-id imageTag=2.0 \
+  --query '{ScanStatus: imageScanStatus, SeverityCounts: imageScanFindings.findingSeverityCounts}' \
+  --output json
+
+Found some vulns. Let's do soem security exercises.
+This is pretty much the idea
+Finding
+   ↓
+Affected package
+   ↓
+Where did package come from?
+   ↓
+Is there a fix?
+   ↓
+Can we upgrade?
+   ↓
+Does upgrading break the application?
+   ↓
+Rebuild
+   ↓
+Rescan
+   ↓
+Compare findings
+Pretty much risk-based vuln mgt
+
+# Inspect critical fiindings
+aws ecr describe-image-scan-findings \
+  --repository-name inner-circle \
+  --image-id imageTag=2.0 \
+  --query 'imageScanFindings.enhancedFindings[?severity==`CRITICAL`].[packageVulnerabilityDetails.vulnerabilityId,packageVulnerabilityDetails.packageName,packageVulnerabilityDetails.packageVersion,packageVulnerabilityDetails.fixedInVersion,title]' \
+  --output table
+
+Check out Security-Documentation.md
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

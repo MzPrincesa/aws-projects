@@ -1,4 +1,5 @@
 curl http://inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com/members
+curl http://inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com/health
 
 
 "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513",
@@ -10,13 +11,35 @@ alb  "sg-0e3f55f619c354e35",
 "SecurityGroupArn": "arn:aws:ec2:us-east-1:343218184480:security-group/sg-0e3f55f619c354e35"
 
 --tasks arn:aws:ecs:us-east-1:343218184480:task/inner-circle-cluster/e0dec7deb47b4e46b5951ba52557db06
- "name": "privateIPv4Address",
- "value": "10.0.6.78"
- eni-0cd4af1d9b5d257ed 
- 32.192.175.39
+Your Fargate task currently has:
+Property	Current state
+Subnet	subnet-039b5acdc43022cf5
+Subnet CIDR	10.0.0.0/20
+Subnet type	Public
+Private IP	10.0.6.78
+Public IP	32.192.175.39
+assignPublicIp	ENABLED
+Security Group	sg-093601b8018d1fe45
 vpc-082cc8072634505e1
-sg-093601b8018d1fe45
+"apiVpcEndpointId": "vpce-0d3adcd51c3109d63"
+ "NetworkInterfaceIds": [
+            "eni-01d1d945cd1aada60",
+            "eni-00b3e52b261d901b3"
 
+dkr VpcEndpointId": "vpce-0a589eea2a1affb67"
+cloudwatch "VpcEndpointId": "vpce-04219155b797887d5",
+dynamodb "VpcEndpointId": "vpce-074bff006d3d4eb30",
+
+
+
+
+
+
+
+
+endpoint sg
+    "GroupId": "sg-0bbfca8016abaead3",
+    "SecurityGroupArn": "arn:aws:ec2:us-east-1:343218184480:security-group/sg-0bbfca8016abaead3"
 us-east-1a
 subnet-039b5acdc43022cf5
 
@@ -32,3 +55,8 @@ subnet-035411becac61fe17
 "Arn": "arn:aws:iam::343218184480:role/inner-circle-task-role",
 
   "Arn": "arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy",
+
+
+
+
+
