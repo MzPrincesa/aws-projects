@@ -1,0 +1,34 @@
+curl http://inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com/members
+
+
+"LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513",
+            "DNSName": "inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com",
+
+"TargetGroupArn": arn:aws:elasticloadbalancing:us-east-1:343218184480:targetgroup/inner-circle-tg/1df528d17d304ef4
+
+alb  "sg-0e3f55f619c354e35",
+"SecurityGroupArn": "arn:aws:ec2:us-east-1:343218184480:security-group/sg-0e3f55f619c354e35"
+
+--tasks arn:aws:ecs:us-east-1:343218184480:task/inner-circle-cluster/e0dec7deb47b4e46b5951ba52557db06
+ "name": "privateIPv4Address",
+ "value": "10.0.6.78"
+ eni-0cd4af1d9b5d257ed 
+ 32.192.175.39
+vpc-082cc8072634505e1
+sg-093601b8018d1fe45
+
+us-east-1a
+subnet-039b5acdc43022cf5
+
+us-east-1b
+subnet-035411becac61fe17
+
+    "serviceArn": "arn:aws:ecs:us-east-1:343218184480:service/inner-circle-cluster/inner-circle-service",
+        "serviceName": "inner-circle-service",
+        "clusterArn": "arn:aws:ecs:us-east-1:343218184480:cluster/inner-circle-cluster",
+
+"TableArn": "arn:aws:dynamodb:us-east-1:343218184480:table/inner-circle-members",
+
+"Arn": "arn:aws:iam::343218184480:role/inner-circle-task-role",
+
+  "Arn": "arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy",

@@ -7,25 +7,36 @@
   "cpu": "256",
   "memory": "512",
   "executionRoleArn": "arn:aws:iam::343218184480:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::343218184480:role/inner-circle-task-role",
   "containerDefinitions": [
     {
-      "name": "inner-circle",
-      "image": "343218184480.dkr.ecr.us-east-1.amazonaws.com/inner-circle:1.0",
-      "essential": true,
-      "portMappings": [
-        {
-          "containerPort": 3000,
-          "protocol": "tcp"
-        }
-      ],
-      "logConfiguration": {
-        "logDriver": "awslogs",
-        "options": {
-          "awslogs-group": "/ecs/inner-circle",
-          "awslogs-region": "us-east-1",
-          "awslogs-stream-prefix": "ecs"
-        }
-      }
+  "name": "inner-circle",
+  "image": "343218184480.dkr.ecr.us-east-1.amazonaws.com/inner-circle:2.0",
+  "essential": true,
+  "environment": [
+    {
+      "name": "AWS_REGION",
+      "value": "us-east-1"
+    },
+    {
+      "name": "DYNAMODB_TABLE",
+      "value": "inner-circle-members"
     }
+  ],
+  "portMappings": [
+    {
+      "containerPort": 3000,
+      "protocol": "tcp"
+    }
+  ],
+  "logConfiguration": {
+    "logDriver": "awslogs",
+    "options": {
+      "awslogs-group": "/ecs/inner-circle",
+      "awslogs-region": "us-east-1",
+      "awslogs-stream-prefix": "ecs"
+    }
+  }
+}
   ]
 }
