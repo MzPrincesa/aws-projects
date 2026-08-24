@@ -57,6 +57,28 @@ subnet-035411becac61fe17
   "Arn": "arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy",
 
 
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 343218184480.dkr.ecr.us-east-1.amazonaws.com
+
+aws ecs register-task-definition --cli-input-json file://inner-circle-task-definition.json
+"taskDefinition": {
+        "taskDefinitionArn": "arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:4"
 
 
+aws ecs update-service \
+    --cluster inner-circle-cluster \
+    --service inner-circle-service \
+    --task-definition arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:4
+
+aws ecs describe-tasks \
+  --cluster inner-circle-cluster \
+  --tasks 6da3d08df159420d895f6757976334fc \
+  --query 'tasks[0].{taskArn:taskArn,lastStatus:lastStatus,desiredStatus:desiredStatus,healthStatus:healthStatus,taskDefinition:taskDefinitionArn,containers:containers[*].{name:name,lastStatus:lastStatus,healthStatus:healthStatus,exitCode:exitCode,reason:reason}}' \
+  --output json
+
+
+aws ecs describe-tasks \
+  --cluster inner-circle-cluster \
+  --tasks arn:aws:ecs:us-east-1:343218184480:task/inner-circle-cluster/4b797061b9b54604b1c830676242b18e \
+  --query 'tasks[0].{lastStatus:lastStatus,healthStatus:healthStatus,containers:containers[*].healthStatus}' \
+  --output json
 

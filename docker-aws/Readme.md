@@ -459,10 +459,37 @@ aws ecr describe-image-scan-findings \
 Check out Security-Documentation.md
 
 
+proceed to push new image to ecr & update task definition
 
+# Update ecs service
+aws ecs update-service \
+    --cluster inner-circle-cluster \
+    --service inner-circle-service \
+    --task-definition arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:3
 
+# Inspect task health
+aws ecs describe-tasks \
+  --cluster inner-circle \
+  --tasks <TASK-ID-FOR-REVISION-3> \
+  --query 'tasks[0].{taskArn:taskArn,lastStatus:lastStatus,desiredStatus:desiredStatus,healthStatus:healthStatus,taskDefinition:taskDefinitionArn,containers:containers[*].{name:name,lastStatus:lastStatus,healthStatus:healthStatus,exitCode:exitCode,reason:reason}}' \
+  --output json
 
+Made a chnage too my task definition. added health status for the container and redployed it
+aws ecs register-task-definition \
+  --cli-input-json file://inner-circle-task-definition.json
 
+# Check container health 
+aws ecs describe-tasks \
+  --cluster inner-circle-cluster \
+  --tasks <new-task-arn> \
+  --query 'tasks[0].{lastStatus:lastStatus,healthStatus:healthStatus,containers:containers[*].healthStatus}' \
+  --output json
+
+# Stop maually created task 
+aws ecs stop-task \
+  --cluster inner-circle-cluster \
+  --task e0dec7deb47b4e46b5951ba52557db06 \
+  --reason "Superseded by inner-circle:4, cleaning up manually-started task"
 
 
 
