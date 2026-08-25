@@ -52,9 +52,6 @@ aws secretsmanager create-secret \
   --secret-string '{"INTERNAL_API_KEY":"b2c0c2ff7a17260e761c5f3b65108962e8eb079c179789ab6c01e61ea020a525"}' 
  
 
-
-
-
 endpoint sg
     "GroupId": "sg-0bbfca8016abaead3",
     "SecurityGroupArn": "arn:aws:ec2:us-east-1:343218184480:security-group/sg-0bbfca8016abaead3"
@@ -94,11 +91,6 @@ aws ecs execute-command \
   --container inner-circle \
   --interactive \
   --command "/bin/sh"
-
-
-
-
-
 
 
 aws ecs describe-tasks \
@@ -149,7 +141,12 @@ aws ecs update-service \
   --force-new-deployment
 
 
-
+@MzPrincesa ➜ /workspaces/aws-projects (main) $ aws s3api create-bucket \
+>   --bucket inner-circle-terraform-state-343218184480 \
+>   --region us-east-1
+{
+    "Location": "/inner-circle-terraform-state-343218184480",
+    "BucketArn": "arn:aws:s3:::inner-circle-terraform-state-343218184480"
 
 
 

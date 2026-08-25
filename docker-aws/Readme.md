@@ -635,3 +635,97 @@ aws application-autoscaling describe-scalable-targets \
   --output json
 
 
+# Terraform
+Confirm Terraform is installed
+terraform -version
+
+# Create TF state bucket
+aws s3api create-bucket \
+  --bucket inner-circle-terraform-state-343218184480 \
+  --region us-east-1
+
+# Enable versioning as it helps riollback to a previous known good state if somwething breaks & block pub access
+aws s3api put-bucket-versioning \
+  --bucket inner-circle-terraform-state-343218184480 \
+  --versioning-configuration Status=Enabled
+
+aws s3api put-public-access-block \
+  --bucket inner-circle-terraform-state-343218184480 \
+  --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+# Enable encryption
+aws s3api put-bucket-encryption \
+  --bucket inner-circle-terraform-state-343218184480 \
+  --server-side-encryption-configuration '{
+    "Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]
+  }'
+
+# Scaffold the tf project
+# Starting with S3
+mkdir -p terraform/bootstrap
+cd terraform/bootstrap
+
+Step 1- Create versions.tf & providers.tf
+Note: State locking prevents two terraform apply runs from corrupting state if run simultaneously. Modern Terraform (1.10+) supports native S3 locking without needing a separate DynamoDB table
+
+Create main.tf in the same terraform/bootstrap directory and define all the s3 alb bucket configs that match what is already running
+
+Step 2 — Import each resource into state
+terraform import aws_s3_bucket.alb_logs inner-circle-alb-logs-343218184480
+terraform import aws_s3_bucket_versioning.alb_logs inner-circle-alb-logs-343218184480
+terraform import aws_s3_bucket_policy.alb_logs inner-circle-alb-logs-343218184480
+terraform plan
+P.S. The expected output = Your infrastructure matches the configuration.
+
+# ECR
+Confirm config so your hcl file matches exactly what you have
+aws ecr describe-repositories \
+  --repository-names inner-circle \
+  --output json
+
+Add to main.tf file.
+Import & plan
+terraform import aws_ecr_repository.inner_circle inner-circle
+terraform plan
+
+# Enhanced Scanning
+Pull registry configs
+aws ecr describe-registry \
+  --query 'registryId' \
+  --output text
+
+aws ecr get-registry-scanning-configuration \
+  --output json
+
+Add config from 2nd output to main.tf
+
+terraform import aws_ecr_registry_scanning_configuration.this 343218184480 (Registry-level resources import using the account/registry ID, not a resource name)
+terraform plan
+
+# Networking
+Byt now you should understand why the below are happening
+aws ec2 describe-vpcs \
+  --vpc-ids vpc-082cc8072634505e1 \
+  --output json
+
+aws ec2 describe-subnets \
+  --filters "Name=vpc-id,Values=vpc-082cc8072634505e1" \
+  --query 'Subnets[*].{SubnetId:SubnetId,CidrBlock:CidrBlock,AZ:AvailabilityZone,MapPublicIp:MapPublicIpOnLaunch,Tags:Tags}' \
+  --output json
+
+aws ec2 describe-route-tables \
+  --filters "Name=vpc-id,Values=vpc-082cc8072634505e1" \
+  --output json
+
+aws ec2 describe-internet-gateways \
+  --filters "Name=attachment.vpc-id,Values=vpc-082cc8072634505e1" \
+  --output json
+
+aws ec2 describe-security-groups \
+  --filters "Name=vpc-id,Values=vpc-082cc8072634505e1" \
+  --output json
+
+aws ec2 describe-vpc-endpoints \
+  --filters "Name=vpc-id,Values=vpc-082cc8072634505e1" \
+  --output json
+
