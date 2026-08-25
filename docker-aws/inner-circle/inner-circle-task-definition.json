@@ -23,6 +23,12 @@
       "value": "inner-circle-members"
     }
   ],
+    "secrets": [
+    {
+      "name": "INTERNAL_API_KEY",
+      "valueFrom": "arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z:INTERNAL_API_KEY::"
+    }
+  ],
   "healthCheck": {
   "command": [
     "CMD-SHELL",

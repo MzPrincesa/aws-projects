@@ -491,34 +491,147 @@ aws ecs stop-task \
   --task e0dec7deb47b4e46b5951ba52557db06 \
   --reason "Superseded by inner-circle:4, cleaning up manually-started task"
 
+# Tighten policy document
+Dynamodb doc tightened to least-priviledge since app only calls ScanCommand (GET /members)
+PutCommand (POST /members)
+GetCommand (GET /members/:id)
 
+aws iam create-policy-version \
+  --policy-arn arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy \
+  --policy-document file://inner-circle-dynamodb-policy.json \
+  --set-as-default
+This command was used because the policy is a manged policy.
 
+Retest your application across those commands
 
+# Secrets managemnt
+Our app has no secrets written into it and dynamodb auth is IAM based not credential based. So let's create a placeholder
+aws secretsmanager create-secret \
+  --name inner-circle/internal-api-key \
+  --description "Internal API key for inner-circle protected routes (placeholder for future auth)" \
+  --secret-string '{"INTERNAL_API_KEY":"replace-with-a-real-generated-key"}' 
+  generate something realistic rather than a dummy string, so it exercises real formatting. I used openssl rand -hex 32
 
+# Create a policy document for this secret
+create  a json file defining the secret policy & deploy to your ecstaskexecutionrole
+aws iam put-role-policy \
+  --role-name ecsTaskExecutionRole \
+  --policy-name InnerCircleSecretsAccess \
+  --policy-document file://internal-api-secrets-policy.json
 
+# Verify deployment 
+aws iam get-role-policy \
+  --role-name ecsTaskExecutionRole \
+  --policy-name InnerCircleSecretsAccess \
+  --query 'PolicyDocument'
 
+# Write the secret into the task definition
+Credate a secrets block and define name & valueFrom
 
+ Register the new revision and update the service
 
+# Had to create secrets manager endpoint as i kept havinga  resource initialization error as teh task kept tryinfg to call secrets manager
+aws ec2 create-vpc-endpoint \
+  --vpc-id vpc-082cc8072634505e1 \
+  --service-name com.amazonaws.us-east-1.secretsmanager \
+  --vpc-endpoint-type Interface \
+  --subnet-ids subnet-0d698b6a64e0c2d52 subnet-06fb679155a3e12ef \
+  --security-group-ids sg-0bbfca8016abaead3 \
+  --private-dns-enabled
 
+# ALB hardening
+Inspect ALB
+aws elbv2 describe-load-balancer-attributes \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --output table
 
+Inspect listener
+aws elbv2 describe-listeners \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --output json
 
+Inspect SG
+aws ec2 describe-security-groups \
+  --group-ids sg-0e3f55f619c354e35 \
+  --query 'SecurityGroups[0].IpPermissions' \
+  --output json
 
+# Enable deletion protection
+aws elbv2 modify-load-balancer-attributes \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --attributes Key=deletion_protection.enabled,Value=true
 
+# Enable drop_invalid_header_fields
+aws elbv2 modify-load-balancer-attributes \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --attributes Key=routing.http.drop_invalid_header_fields.enabled,Value=true
 
+# Enable S3 Access logging
+aws s3api create-bucket \
+  --bucket inner-circle-alb-logs-343218184480 \
+  --region us-east-1
 
+Create log policy 
+Attach policy to bu8cket
+aws s3api put-bucket-policy \
+  --bucket inner-circle-alb-logs-343218184480 \
+  --policy file://alb-logs-bucket-policy.json
 
+Enable logging on the ALB, & point to the bucket:
+aws elbv2 modify-load-balancer-attributes \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --attributes \
+    Key=access_logs.s3.enabled,Value=true \
+    Key=access_logs.s3.bucket,Value=inner-circle-alb-logs-343218184480
 
+Reconfirm it all worked
+aws elbv2 describe-load-balancer-attributes \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --output table
 
+After 5mins
+aws s3 ls s3://inner-circle-alb-logs-343218184480/AWSLogs/343218184480/ --recursive
 
+You can go a step further to ensure your bucket isn't exposed
+aws s3api get-public-access-block \
+  --bucket inner-circle-alb-logs-343218184480
 
+# ECS Autoscaling
+Register the ECS service as a scalable target
+aws application-autoscaling register-scalable-target \
+  --service-namespace ecs \
+  --resource-id service/inner-circle-cluster/inner-circle-service \
+  --scalable-dimension ecs:service:DesiredCount \
+  --min-capacity 1 \
+  --max-capacity 3
 
+# Define & apply the scaling policy(ies) you prefer
+aws application-autoscaling put-scaling-policy \
+  --service-namespace ecs \
+  --resource-id service/inner-circle-cluster/inner-circle-service \
+  --scalable-dimension ecs:service:DesiredCount \
+  --policy-name inner-circle-cpu-scaling \
+  --policy-type TargetTrackingScaling \
+  --target-tracking-scaling-policy-configuration file://cpu-scaling-policy.json
 
+aws application-autoscaling put-scaling-policy \
+  --service-namespace ecs \
+  --resource-id service/inner-circle-cluster/inner-circle-service \
+  --scalable-dimension ecs:service:DesiredCount \
+  --policy-name inner-circle-memory-scaling \
+  --policy-type TargetTrackingScaling \
+  --target-tracking-scaling-policy-configuration file://memory-scaling-policy.json
 
+Confirm Policy
+aws application-autoscaling describe-scaling-policies \
+  --service-namespace ecs \
+  --resource-id service/inner-circle-cluster/inner-circle-service \
+  --output json
 
-
-
-
-
-
+Confirm scalable target
+aws application-autoscaling describe-scalable-targets \
+  --service-namespace ecs \
+  --resource-ids service/inner-circle-cluster/inner-circle-service \
+  --output json
 
 

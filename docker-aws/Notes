@@ -1,5 +1,8 @@
 curl http://inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com/members
 curl http://inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com/health
+curl -X POST http://inner-circle-alb-1924311919.us-east-1.elb.amazonaws.com/members \
+  -H "Content-Type: application/json" \
+  -d '{"memberId":"002","name":"Second Member","email":"test2@example.com"}'
 
 
 "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513",
@@ -32,7 +35,22 @@ dynamodb "VpcEndpointId": "vpce-074bff006d3d4eb30",
 
 
 
+aws ec2 create-vpc-endpoint \
+  --vpc-id vpc-082cc8072634505e1 \
+  --service-name com.amazonaws.us-east-1.secretsmanager \
+  --vpc-endpoint-type Interface \
+  --subnet-ids subnet-0d698b6a64e0c2d52 subnet-06fb679155a3e12ef \
+  --security-group-ids sg-0bbfca8016abaead3 \
+  --private-dns-enabled
 
+
+
+
+aws secretsmanager create-secret \
+  --name inner-circle/internal-api-key \
+  --description "Internal API key for inner-circle protected routes (placeholder for future auth)" \
+  --secret-string '{"INTERNAL_API_KEY":"b2c0c2ff7a17260e761c5f3b65108962e8eb079c179789ab6c01e61ea020a525"}' 
+ 
 
 
 
@@ -61,13 +79,27 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 
 aws ecs register-task-definition --cli-input-json file://inner-circle-task-definition.json
 "taskDefinition": {
-        "taskDefinitionArn": "arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:4"
+        "taskDefinitionArn": "arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:5"
 
 
 aws ecs update-service \
     --cluster inner-circle-cluster \
     --service inner-circle-service \
-    --task-definition arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:4
+    --task-definition arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:5
+
+
+aws ecs execute-command \
+  --cluster inner-circle-cluster \
+  --task arn:aws:ecs:us-east-1:343218184480:task/inner-circle-cluster/4b797061b9b54604b1c830676242b18e \
+  --container inner-circle \
+  --interactive \
+  --command "/bin/sh"
+
+
+
+
+
+
 
 aws ecs describe-tasks \
   --cluster inner-circle-cluster \
@@ -76,9 +108,60 @@ aws ecs describe-tasks \
   --output json
 
 
+aws ecs list-tasks \
+--cluster inner-circle-cluster \
+--desired-status RUNNING \
+--output table
+
+
+
+aws ecs list-tasks \
+--cluster inner-circle-cluster \
+--output table
+
+
 aws ecs describe-tasks \
   --cluster inner-circle-cluster \
   --tasks arn:aws:ecs:us-east-1:343218184480:task/inner-circle-cluster/4b797061b9b54604b1c830676242b18e \
   --query 'tasks[0].{lastStatus:lastStatus,healthStatus:healthStatus,containers:containers[*].healthStatus}' \
   --output json
+
+{
+    "ARN": "arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z",
+    "Name": "inner-circle/internal-api-key",
+    "VersionId": "36409c88-dc54-46bc-8cf5-7cc0e75bab7d"
+
+    aws secretsmanager describe-secret \
+  --secret-id inner-circle/internal-api-key \
+  --query arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z \
+  --output text
+
+  aws iam put-role-policy \
+  --role-name ecsTaskExecutionRole \
+  --policy-name InnerCircleSecretsAccess \
+  --policy-document file://secrets-policy.json
+
+
+aws ecs update-service \
+  --cluster inner-circle-cluster \
+  --service inner-circle-service \
+  --enable-execute-command \
+  --force-new-deployment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
