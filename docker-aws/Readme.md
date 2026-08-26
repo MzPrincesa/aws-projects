@@ -775,4 +775,5 @@ Add a variables.tf for the secret value
 Create ypur terraform.tfvars file for the secret. Ensure itr is referenced in your .gitignore and never commited.
 Add resources to secrets.tf
 
-Import both resources
+Import both resources and run terraform plan
+

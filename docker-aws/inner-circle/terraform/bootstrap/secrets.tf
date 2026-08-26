@@ -1,6 +1,7 @@
 resource "aws_secretsmanager_secret" "internal_api_key" {
-  name        = "inner-circle/internal-api-key"
-  description = "Internal API key for inner-circle protected routes (placeholder for future auth)"
+  name                    = "inner-circle/internal-api-key"
+  description             = "Internal API key for inner-circle protected routes (placeholder for future auth)"
+  recovery_window_in_days = 30
 }
 
 resource "aws_secretsmanager_secret_version" "internal_api_key" {
