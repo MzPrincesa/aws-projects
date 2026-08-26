@@ -912,3 +912,10 @@ aws s3api delete-bucket --bucket inner-circle-terraform-state-343218184480
 
 # Final sanity check
 aws resourcegroupstaggingapi get-resources --region us-east-1 --output json | grep -i inner-circle
+Should return empty
+
+# Disable GH Actions
+mkdir -p .github/workflows-disabled
+git mv .github/workflows/deploy.yml .github/workflows-disabled/deploy.yml
+git commit -m "Disable CI/CD workflow after infra teardown (kept for reference)"
+git push origin main
