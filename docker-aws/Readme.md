@@ -865,6 +865,7 @@ git add .github/workflows/deploy.yml
 git commit -m "add GitHub Actions CI/CD pipeline"
 git push origin test-ci-pipeline
 
+<<<<<<< HEAD
 Build failed Error: Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity
 
 I double checked everything and ran
@@ -883,5 +884,11 @@ Trust policy was adjusted to reflect OIDC sub claim and an update assume role po
 
 Once build and plan pass, merge by running 
 gh pr merge test-ci-pipeline --squash
+=======
+
+
+
+
+>>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
 
 

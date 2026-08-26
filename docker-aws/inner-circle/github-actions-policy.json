@@ -4,13 +4,18 @@
     {
       "Sid": "TerraformStateAccess",
       "Effect": "Allow",
+<<<<<<< HEAD
       "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
+=======
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+>>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
       "Resource": [
         "arn:aws:s3:::inner-circle-terraform-state-343218184480",
         "arn:aws:s3:::inner-circle-terraform-state-343218184480/*"
       ]
     },
     {
+<<<<<<< HEAD
       "Sid": "AlbLogsBucketAccess",
       "Effect": "Allow",
       "Action": ["s3:Get*", "s3:List*", "s3:PutBucketPolicy", "s3:PutBucketVersioning"],
@@ -21,6 +26,9 @@
     },
     {
       "Sid": "ECRFullAccess",
+=======
+      "Sid": "ECRPushPull",
+>>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
       "Effect": "Allow",
       "Action": [
         "ecr:GetAuthorizationToken",
@@ -29,15 +37,20 @@
         "ecr:InitiateLayerUpload",
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload",
+<<<<<<< HEAD
         "ecr:BatchGetImage",
         "ecr:DescribeRepositories",
         "ecr:GetRegistryScanningConfiguration",
         "ecr:PutRegistryScanningConfiguration",
         "ecr:ListTagsForResource"
+=======
+        "ecr:BatchGetImage"
+>>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
       ],
       "Resource": "*"
     },
     {
+<<<<<<< HEAD
       "Sid": "IamRolesAndPolicies",
       "Effect": "Allow",
       "Action": [
@@ -66,6 +79,8 @@
       "Resource": "arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z"
     },
     {
+=======
+>>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
       "Sid": "TerraformManagedInfra",
       "Effect": "Allow",
       "Action": [
@@ -73,6 +88,13 @@
         "elasticloadbalancing:*",
         "application-autoscaling:*",
         "ec2:Describe*",
+<<<<<<< HEAD
+=======
+        "iam:GetRole",
+        "iam:PassRole",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue",
+>>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
         "logs:DescribeLogGroups"
       ],
       "Resource": "*"
