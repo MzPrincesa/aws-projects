@@ -865,9 +865,23 @@ git add .github/workflows/deploy.yml
 git commit -m "add GitHub Actions CI/CD pipeline"
 git push origin test-ci-pipeline
 
+Build failed Error: Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity
 
+I double checked everything and ran
+git commit --allow-empty -m "trigger CI re-run"
+git push origin test-ci-pipeline
 
+Still failed. I ran 
+aws cloudtrail lookup-events \
+  --lookup-attributes AttributeKey=EventName,AttributeValue=AssumeRoleWithWebIdentity \
+  --max-results 5 \
+  --output json
 
+This showed there was a mismatch in the sub claim i defined in my trust policy and what Gh OIDC sub claim was. This turned out to be because of an update in how new gh repos format OIDC sub claims. the new immutable subject format involves embedding the numeric, permanent owner ID and repo ID alongside the names, specifically to prevent a security issue where a deleted/renamed repo's old name could be reclaimed by someone else and used to mint tokens matching an old trust policy. Thsii became effective in effective July 15, 2026.
 
+Trust policy was adjusted to reflect OIDC sub claim and an update assume role policy command was run.
+
+Once build and plan pass, merge by running 
+gh pr merge test-ci-pipeline --squash
 
 

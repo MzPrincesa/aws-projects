@@ -4,14 +4,23 @@
     {
       "Sid": "TerraformStateAccess",
       "Effect": "Allow",
-      "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
       "Resource": [
         "arn:aws:s3:::inner-circle-terraform-state-343218184480",
         "arn:aws:s3:::inner-circle-terraform-state-343218184480/*"
       ]
     },
     {
-      "Sid": "ECRPushPull",
+      "Sid": "AlbLogsBucketAccess",
+      "Effect": "Allow",
+      "Action": ["s3:Get*", "s3:List*", "s3:PutBucketPolicy", "s3:PutBucketVersioning"],
+      "Resource": [
+        "arn:aws:s3:::inner-circle-alb-logs-343218184480",
+        "arn:aws:s3:::inner-circle-alb-logs-343218184480/*"
+      ]
+    },
+    {
+      "Sid": "ECRFullAccess",
       "Effect": "Allow",
       "Action": [
         "ecr:GetAuthorizationToken",
@@ -20,9 +29,41 @@
         "ecr:InitiateLayerUpload",
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload",
-        "ecr:BatchGetImage"
+        "ecr:BatchGetImage",
+        "ecr:DescribeRepositories",
+        "ecr:GetRegistryScanningConfiguration",
+        "ecr:PutRegistryScanningConfiguration",
+        "ecr:ListTagsForResource"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "IamRolesAndPolicies",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:ListRolePolicies",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:iam::343218184480:role/inner-circle-task-role",
+        "arn:aws:iam::343218184480:role/ecsTaskExecutionRole",
+        "arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy"
+      ]
+    },
+    {
+      "Sid": "SecretsManagerAccess",
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:GetResourcePolicy"
+      ],
+      "Resource": "arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z"
     },
     {
       "Sid": "TerraformManagedInfra",
@@ -32,10 +73,6 @@
         "elasticloadbalancing:*",
         "application-autoscaling:*",
         "ec2:Describe*",
-        "iam:GetRole",
-        "iam:PassRole",
-        "secretsmanager:DescribeSecret",
-        "secretsmanager:GetSecretValue",
         "logs:DescribeLogGroups"
       ],
       "Resource": "*"

@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "alb_logs" {
   bucket = "inner-circle-alb-logs-343218184480"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "alb_logs" {

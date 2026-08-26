@@ -12,7 +12,7 @@
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:MzPrincesa/aws-projects:*"
+          "token.actions.githubusercontent.com:sub": "repo:MzPrincesa@115846148/aws-projects@1340719134:*"
         }
       }
     }

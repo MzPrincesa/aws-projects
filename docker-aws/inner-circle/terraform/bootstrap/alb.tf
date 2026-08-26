@@ -12,7 +12,7 @@ resource "aws_lb" "inner_circle" {
     aws_security_group.alb_sg.id,
   ]
 
-  enable_deletion_protection      = true
+  enable_deletion_protection      = false
   drop_invalid_header_fields      = true
 
   access_logs {
