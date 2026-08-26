@@ -61,4 +61,23 @@ echo ">>> Importing Secrets Manager"
 terraform import aws_secretsmanager_secret.internal_api_key arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z
 terraform import aws_secretsmanager_secret_version.internal_api_key "arn:aws:secretsmanager:us-east-1:343218184480:secret:inner-circle/internal-api-key-rfBQ5z|36409c88-dc54-46bc-8cf5-7cc0e75bab7d"
 
+echo ">>> Importing ECS/ALB resources"
+
+terraform import aws_ecs_cluster.main inner-circle-cluster
+terraform import aws_ecs_task_definition.inner_circle arn:aws:ecs:us-east-1:343218184480:task-definition/inner-circle:5
+
+terraform import aws_lb.inner_circle arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513
+terraform import aws_lb_target_group.inner_circle arn:aws:elasticloadbalancing:us-east-1:343218184480:targetgroup/inner-circle-tg/1df528d17d304ef4
+terraform import aws_lb_listener.http arn:aws:elasticloadbalancing:us-east-1:343218184480:listener/app/inner-circle-alb/4ad91183b9f4e513/60e8ed3e9d8e959a
+
+terraform import aws_ecs_service.inner_circle inner-circle-cluster/inner-circle-service
+
+echo ">>> Importing autoscaling resources"
+
+terraform import aws_appautoscaling_target.ecs_service ecs/service/inner-circle-cluster/inner-circle-service/ecs:service:DesiredCount
+
+terraform import aws_appautoscaling_policy.cpu ecs/service/inner-circle-cluster/inner-circle-service/ecs:service:DesiredCount/inner-circle-cpu-scaling
+
+terraform import aws_appautoscaling_policy.memory ecs/service/inner-circle-cluster/inner-circle-service/ecs:service:DesiredCount/inner-circle-memory-scaling
+
 echo ">>> All imports complete"

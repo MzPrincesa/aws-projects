@@ -777,3 +777,44 @@ Add resources to secrets.tf
 
 Import both resources and run terraform plan
 
+# ECS/ALB (Becuase this portion is a lot, these will be imported one at a time so any drift is easy to isolate and fix)
+aws ecs describe-clusters \
+  --clusters inner-circle-cluster \
+  --output json
+
+aws ecs describe-task-definition \
+  --task-definition inner-circle:5 \
+  --output json
+
+aws ecs describe-services \
+  --cluster inner-circle-cluster \
+  --services inner-circle-service \
+  --output json
+
+aws elbv2 describe-target-groups \
+  --names inner-circle-tg \
+  --output json
+
+aws elbv2 describe-load-balancers \
+  --names inner-circle-alb \
+  --output json
+
+aws elbv2 describe-listeners \
+  --load-balancer-arn arn:aws:elasticloadbalancing:us-east-1:343218184480:loadbalancer/app/inner-circle-alb/4ad91183b9f4e513 \
+  --output json
+
+Create alb.tf, & ecs.tf
+Import and plan
+
+create autoscaling.tf and plan
+
+
+
+
+
+
+
+
+
+
+
