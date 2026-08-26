@@ -149,7 +149,29 @@ aws ecs update-service \
     "BucketArn": "arn:aws:s3:::inner-circle-terraform-state-343218184480"
 
 
-
+    {
+    "Role": {
+        "Path": "/",
+        "RoleName": "github-actions-inner-circle",
+        "RoleId": "AROAU72LF4EQMVJ4YIX7U",
+        "Arn": "arn:aws:iam::343218184480:role/github-actions-inner-circle",
+        "CreateDate": "2026-08-26T04:13:37+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Federated": "arn:aws:iam::343218184480:oidc-provider/token.actions.githubusercontent.com"
+                    },
+                    "Action": "sts:AssumeRoleWithWebIdentity",
+                    "Condition": {
+                        "StringEquals": {
+                            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                        },
+                        "StringLike": {
+                            "token.actions.githubusercontent.com:sub": "repo:MzPrincesa/aws-projects:*"
+                        }
 
 
 

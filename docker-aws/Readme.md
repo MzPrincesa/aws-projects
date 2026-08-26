@@ -808,9 +808,62 @@ Import and plan
 
 create autoscaling.tf and plan
 
+# GH Actions
+# Create the OIDC identity provider
+aws iam create-open-id-connect-provider \
+  --url https://token.actions.githubusercontent.com \
+  --client-id-list sts.amazonaws.com \
+  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
 
+Create a GH actions trust policy scoped to your exact repo
 
+aws iam create-role \
+  --role-name github-actions-inner-circle \
+  --assume-role-policy-document file://github-actions-trust-policy.json
 
+Create Permissions policy for the role
+
+aws iam put-role-policy \
+  --role-name github-actions-inner-circle \
+  --policy-name InnerCircleGithubActionsDeploy \
+  --policy-document file://github-actions-policy.json
+
+Because our .tfvars is ignored, CI has no way of seeing it and the internal-api-key variable has to have a value. 
+Fix: store the actual value as a GitHub Actions secret (encrypted, never shown in logs, never visible in the repo) and wire it in via that env var. (not sure if this is the best option but it's whatw e are going with for now)
+
+# Add the secret to your GitHub repo
+gh secret set INTERNAL_API_KEY --repo YOUR_GITHUB_USERNAME/aws-projects 
+That'll prompt you to paste the value interactively
+
+OR
+
+Via the GitHub web UI:
+
+Go to your repo on GitHub → Settings → Secrets and variables → Actions
+Click New repository secret
+Name: INTERNAL_API_KEY
+Value: paste the actual key from your local terraform.tfvars
+Save
+
+# Funnel the secret into both Terraform jobs in the workflow
+Add 
+ env:
+      TF_VAR_internal_api_key: ${{ secrets.INTERNAL_API_KEY }}
+ just before the steps in both the terraform plan & apply sections
+
+Normally you would run:
+git commit -m "add GitHub Actions CI/CD pipeline"
+git push origin main
+
+Important, given the on: push: branches: [main] trigger — pushing directly to main right now will immediately kick off the entire pipeline, including terraform-apply, since your if condition matches a direct push to main. That means this very first run is a live test against real infrastructure, not a dry run.
+
+Given this is genuinely the first time this pipeline has ever run, I rather create a branch, push there, open a PR into main. That triggers only build-and-push + terraform-plan (no apply), so you get to see the whole pipeline work, and see the plan output, before anything touches real AWS resources.
+
+If you'd rather do that, run:
+git checkout -b test-ci-pipeline
+git add .github/workflows/deploy.yml
+git commit -m "add GitHub Actions CI/CD pipeline"
+git push origin test-ci-pipeline
 
 
 
