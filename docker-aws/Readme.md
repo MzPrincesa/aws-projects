@@ -865,7 +865,6 @@ git add .github/workflows/deploy.yml
 git commit -m "add GitHub Actions CI/CD pipeline"
 git push origin test-ci-pipeline
 
-<<<<<<< HEAD
 Build failed Error: Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity
 
 I double checked everything and ran
@@ -884,11 +883,32 @@ Trust policy was adjusted to reflect OIDC sub claim and an update assume role po
 
 Once build and plan pass, merge by running 
 gh pr merge test-ci-pipeline --squash
-=======
 
+# Destroy
+Disable ALB deletion protection, Allow the ALB logs bucket to be emptied automatically by adding `force destroy`, Allow ECR repo deletion even with images inside
 
+Apply changes with
+terraform apply
 
+Preview destroy
+terraform plan -destroy
+terraform destroy
 
->>>>>>> 984ae523d58d2638e9c948bad3cccfd7469bf720
+# Manual Cleanup (Resources unmanaged by Terraform)
+# CloudWatch log group (auto-created by the awslogs driver, never imported)
+aws logs delete-log-group --log-group-name /ecs/inner-circle
 
+# GitHub Actions IAM role + its inline policy
+aws iam delete-role-policy --role-name github-actions-inner-circle --policy-name InnerCircleGithubActionsDeploy
+aws iam delete-role --role-name github-actions-inner-circle
 
+# OIDC provider (only if you're not using GitHub OIDC for anything else)
+aws iam delete-open-id-connect-provider --open-id-connect-provider-arn arn:aws:iam::343218184480:oidc-provider/token.actions.githubusercontent.com
+
+# Terraform state bucket itself (versioned — must delete all versions first)
+aws s3api delete-objects --bucket inner-circle-terraform-state-343218184480 \
+  --delete "$(aws s3api list-object-versions --bucket inner-circle-terraform-state-343218184480 --output json --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}')"
+aws s3api delete-bucket --bucket inner-circle-terraform-state-343218184480
+
+# Final sanity check
+aws resourcegroupstaggingapi get-resources --region us-east-1 --output json | grep -i inner-circle
