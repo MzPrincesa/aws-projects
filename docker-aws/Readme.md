@@ -665,17 +665,11 @@ aws s3api put-bucket-encryption \
 mkdir -p terraform/bootstrap
 cd terraform/bootstrap
 
-Step 1- Create versions.tf & providers.tf
+Step 1- Create `versions.tf`, `providers.tf` & `import.sh` files
 Note: State locking prevents two terraform apply runs from corrupting state if run simultaneously. Modern Terraform (1.10+) supports native S3 locking without needing a separate DynamoDB table
 
-Create main.tf in the same terraform/bootstrap directory and define all the s3 alb bucket configs that match what is already running
-
-Step 2 — Import each resource into state
-terraform import aws_s3_bucket.alb_logs inner-circle-alb-logs-343218184480
-terraform import aws_s3_bucket_versioning.alb_logs inner-circle-alb-logs-343218184480
-terraform import aws_s3_bucket_policy.alb_logs inner-circle-alb-logs-343218184480
-terraform plan
-P.S. The expected output = Your infrastructure matches the configuration.
+Create s3.tf in the same terraform/bootstrap directory and define all the s3 alb bucket configs that match what is already running
+Define imports for every resource in the `import.sh` file
 
 # ECR
 Confirm config so your hcl file matches exactly what you have
@@ -683,10 +677,7 @@ aws ecr describe-repositories \
   --repository-names inner-circle \
   --output json
 
-Add to main.tf file.
-Import & plan
-terraform import aws_ecr_repository.inner_circle inner-circle
-terraform plan
+Create an ecr.tf file.
 
 # Enhanced Scanning
 Pull registry configs
@@ -697,10 +688,9 @@ aws ecr describe-registry \
 aws ecr get-registry-scanning-configuration \
   --output json
 
-Add config from 2nd output to main.tf
+Add config from 2nd output to ecr.tf
 
-terraform import aws_ecr_registry_scanning_configuration.this 343218184480 (Registry-level resources import using the account/registry ID, not a resource name)
-terraform plan
+Note: Registry-level resources import using the account/registry ID, not a resource name
 
 # Networking
 Byt now you should understand why the below are happening
@@ -729,3 +719,60 @@ aws ec2 describe-vpc-endpoints \
   --filters "Name=vpc-id,Values=vpc-082cc8072634505e1" \
   --output json
 
+Create a network.tf & a vpc_endpoints.tf file.
+Note: If your main route table is the default one auto-created by AWS alongside the VPC, you can't manage (create or destroy) it with a normal `aws_route_table` resource. Terraform has a dedicated resource for this: `aws_default_route_table`. Secondly, if your deafult sg isn't being used by your infrastrucrture/app, it's better to leave it unmanaged. thirdly this is defined by the vpc id and not the rtb id. 
+For the rtb associations, the  format is 'subnet ID/route table ID' or 'gateway ID/route table ID'
+
+# Plan
+Run this command at this point if you wish.
+terraform plan
+P.S. The expected output = No changes. Your infrastructure matches the configuration. Terraform has compared your real infrastructure against your configuration and found no differences, so no changes are needed.
+
+You can run a `terraform state list` command for a sanity check if you wish.
+
+# IAM
+As usual, get current state first
+# Task role: attached managed policies + trust policy
+aws iam get-role --role-name inner-circle-task-role --output json
+aws iam list-attached-role-policies --role-name inner-circle-task-role --output json
+aws iam list-role-policies --role-name inner-circle-task-role --output json
+# customer-managed DynamoDB policy
+aws iam get-policy --policy-arn arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy --output json
+aws iam get-policy-version \
+  --policy-arn arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy \
+  --version-id $(aws iam get-policy --policy-arn arn:aws:iam::343218184480:policy/InnerCircleDynamoDBPolicy --query 'Policy.DefaultVersionId' --output text) \
+  --output json
+# Any inline policies on the task role
+aws iam get-role-policy \
+  --role-name inner-circle-task-role \
+  --policy-name InnerCircleExecuteCommandAccess \
+  --output json
+# Execution role
+aws iam get-role --role-name ecsTaskExecutionRole --output json
+aws iam list-attached-role-policies --role-name ecsTaskExecutionRole --output json
+aws iam list-role-policies --role-name ecsTaskExecutionRole --output json
+aws iam get-role-policy \
+  --role-name ecsTaskExecutionRole \
+  --policy-name InnerCircleSecretsAccess \
+  --output json
+
+Create iam.tf 
+Becuase IAM tends to be finnicky, run `terraform plan` at this point.
+
+# Secrets Mgr
+Get current secret metadata
+aws secretsmanager describe-secret \
+  --secret-id inner-circle/internal-api-key \
+  --output json
+
+Get the value
+aws secretsmanager get-secret-value \
+  --secret-id inner-circle/internal-api-key \
+  --query 'SecretString' \
+  --output text
+
+Add a variables.tf for the secret value
+Create ypur terraform.tfvars file for the secret. Ensure itr is referenced in your .gitignore and never commited.
+Add resources to secrets.tf
+
+Import both resources
